@@ -44,11 +44,15 @@ class YritysRekisteriMuutos(DictTransformer):
         
     @staticmethod
     def kaupunki(data:dict, path:str) -> str:
-        return data[path][0]["postOffices"][0]["city"]
+        offices = data[path][0]["postOffices"]
+        for office in offices:
+            if office["languageCode"] == "1":
+                return office["city"]
+        return None
 
     KAUPUNKI = TransPattern("addresses", "Kaupunki", kaupunki)
     OSOITE = TransPattern("addresses", "Osoite", osoite)
-    YHTIOMUOTO = TransPattern("companyForms", "Yhtiömuoto", yhtiomuoto)
+    YHTIOMUOTO = TransPattern("companyForms", "Yhtiomuoto", yhtiomuoto)
     TOIMIALA = TransPattern("mainBusinessLine", "Toimiala", Toimialanimi)
     REMOVE_BSN_DETAIL = TransPattern("mainBusinessLine.type","Toimialakoodi", lambda d, path: DictTreeTrans.data_from_path(d, path ))
     MAIN_NAME = TransPattern("names", "Nimi", main_name, True)
@@ -61,7 +65,10 @@ class YritysRekisteriMuutos(DictTransformer):
     trans_functions = [WEBSITE, KAUPUNKI, OSOITE,YHTIOMUOTO, Y_TUNNUS,TOIMIALA, MAIN_NAME, REMOVE_BSN_DETAIL, REGISTER_DATE, POISTETTAVAT_KENTÄT]
 
 
-ALAKOODIT = ["62100" "71202"]
+ALAKOODIT = ["62100", # Ohjelmointi 
+             "71127", # Kone ja prosessisuunnittelu.
+             "71129" # Muu tekninen palvelu
+             ]
 ALA_KOMBINAATIOT = ("62", "621", "6210", "63", "72","71")
 ALAKOODIT_BLACKLIST = ["71202", #Autokatsastus
                        "71110" # Arkitehtipalvelut
@@ -79,6 +86,7 @@ class OHJELMATEKNINEN(YritysRekisteriMuutos):
             if alakoodi in ALAKOODIT:
                 if alakoodi == "71202": 
                     print("tieteelline", data["names"][0]["name"])
+                return True
             else:
                 if alakoodi.startswith(ALA_KOMBINAATIOT):
                     if alakoodi not in ALAKOODIT_BLACKLIST:
